@@ -4,3 +4,4 @@ numpy
 scikit-learn
 pillow
 django-cors-headers
+whitenoise
