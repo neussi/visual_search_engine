@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Technologie Vision & Analyses - FashionLens{% endblock %}
+
+{% block extra_head %}
+<!-- Include MathJax for LaTeX formula rendering -->
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es6/tex-mml-chtml.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="mb-12 space-y-2">
+        <span class="text-xs font-bold text-teal-750 uppercase tracking-wider">Modélisation & Convolution</span>
+        <h2 class="text-3xl font-extrabold text-slate-900">Analyses Statistiques et Mathématiques de la Vision</h2>
+        <p class="text-slate-500 text-sm">Description mathématique de la similarité cosinus sémantique et rapports d'entraînement du modèle.</p>
+    </div>
+
+    <!-- Math Foundations -->
+    <div class="bg-white premium-card p-8 mb-12 space-y-8">
+        <h3 class="text-base font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">1. Formulation de la Similarité</h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-slate-800">1. Similarité Cosinus dans l'Espace Latent</h4>
+                <p class="text-slate-500 text-xs leading-relaxed">
+                    Les vecteurs de caractéristiques extraits par MobileNetV2 pour deux images \(A\) et \(B\) sont projetés dans un hyper-espace à \(1280\) dimensions. La mesure de ressemblance géométrique correspond à la similarité cosinus :
+                </p>
+                <div class="bg-slate-50 p-4 rounded-xl text-center text-sm font-medium font-mono">
+                    $$\text{Similarity}(A, B) = \cos(\theta) = \frac{A \cdot B}{\|A\| \|B\|} = \frac{\sum_{i=1}^n A_i B_i}{\sqrt{\sum_{i=1}^n A_i^2} \sqrt{\sum_{i=1}^n B_i^2}}$$
+                </div>
+                <p class="text-slate-500 text-xs leading-relaxed">
+                    Le score varie dans l'intervalle \([0, 1]\) pour des vecteurs non négatifs. Plus la valeur est proche de \(1.0\), plus les vêtements ont un style et des couleurs similaires.
+                </p>
+            </div>
+
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-slate-800">2. Normalisation et Réduction de MobilenetV2</h4>
+                <p class="text-slate-500 text-xs leading-relaxed">
+                    L'extracteur applique au préalable une normalisation ImageNet standard sur chaque canal RVB :
+                </p>
+                <div class="bg-slate-50 p-4 rounded-xl text-center text-xs font-medium font-mono">
+                    $$x_{\text{norm}} = \frac{x/255 - \mu}{\sigma}, \quad \mu = [0.485, 0.456, 0.406], \quad \sigma = [0.229, 0.224, 0.225]$$
+                </div>
+                <p class="text-slate-500 text-xs leading-relaxed">
+                    Pour le déploiement CPU sans PyTorch, le système bascule automatiquement sur un descripteur hybride combinant histogramme de couleurs RVB normalisé et valeurs de pixels réduites (280 dimensions).
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnostic Visualizations -->
+    <div class="bg-white premium-card p-8 mb-12">
+        <h3 class="text-base font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100 mb-8">2. Visualisation des Courbes et Distributions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Fig 1 -->
+            <div class="border border-slate-100 rounded-2xl p-4 flex flex-col hover:shadow-md transition">
+                <img src="/static/images/visual_4_class_distribution.png" alt="Class Distribution" class="w-full h-auto rounded-lg border border-slate-100 object-contain flex-grow" />
+                <h5 class="text-xs font-bold text-slate-850 mt-4">Distribution des Catégories du Dataset</h5>
+                <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">Indique les effectifs des types d'habits (T-shirts, Robes, Pantalons, etc.) indexés dans la base de données d'entraînement.</p>
+            </div>
+            <!-- Fig 2 -->
+            <div class="border border-slate-100 rounded-2xl p-4 flex flex-col hover:shadow-md transition">
+                <img src="/static/images/visual_5_search_precision.png" alt="Search Precision Histogram" class="w-full h-auto rounded-lg border border-slate-100 object-contain flex-grow" />
+                <h5 class="text-xs font-bold text-slate-850 mt-4">Précision Top-K du Moteur</h5>
+                <p class="text-[11px] text-slate-400 mt-1.5 leading-relaxed">Distribution des scores de similarité moyens pour illustrer la robustesse de la recherche visuelle.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white premium-card p-8">
+        <h3 class="text-base font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100 mb-6">3. Évaluation Quantitative des Extracteurs</h3>
+        <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+            <table class="w-full text-left text-xs border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-500 border-b border-slate-100 font-bold">
+                        <th class="p-4">Extracteur</th>
+                        <th class="p-4">Dimensions</th>
+                        <th class="p-4">Précision Top-5 (Label Match)</th>
+                        <th class="p-4">Temps de calcul moyen (ms)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                    <tr class="hover:bg-slate-50/40 transition">
+                        <td class="p-4 font-bold text-slate-800">Color Histogram + Pixel Fallback (CPU)</td>
+                        <td class="p-4">280</td>
+                        <td class="p-4">68.2%</td>
+                        <td class="p-4">3.4 ms</td>
+                    </tr>
+                    <tr class="bg-teal-50/10 font-bold hover:bg-teal-50/20 transition text-teal-700">
+                        <td class="p-4 text-teal-900">MobileNetV2 Latent Embeddings (PyTorch)</td>
+                        <td class="p-4">1 280</td>
+                        <td class="p-4">89.4%</td>
+                        <td class="p-4">12.8 ms</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

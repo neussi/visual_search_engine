@@ -70,7 +70,10 @@ def load_assets():
             
     return visual_assets
 
-def index(request):
+def home(request):
+    return render(request, 'home.html')
+
+def search_view(request):
     assets = load_assets()
     samples = []
     if assets:
@@ -81,7 +84,13 @@ def index(request):
                 'path': assets['catalog_image_paths'][idx],
                 'label': assets['catalog_metadata'][idx]['label']
             })
-    return render(request, 'index.html', {'samples': samples})
+    return render(request, 'search.html', {'samples': samples})
+
+def analytics_view(request):
+    return render(request, 'analytics.html')
+
+def contact_view(request):
+    return render(request, 'contact.html')
 
 @csrf_exempt
 def search(request):
