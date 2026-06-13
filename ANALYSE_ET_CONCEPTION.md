@@ -58,17 +58,17 @@ Items enfants           23   (15.3%)
 |               /search-engine/  (drag-and-drop)                |
 +-----------------------------|---------------------------------+
                               | POST multipart/form-data (image)
-+-----------------------------v----------------------------+
-|                   Django Application                    |
-|                                                         |
++-----------------------------v--------------------------+
+|                   Django Application                   |
+|                                                        |
 |  +------------------+   +------------------+           |
 |  |  Views Layer     |   |  URL Router      |           |
 |  |  views.py        |   |  urls.py         |           |
 |  +--------+---------+   +------------------+           |
-|           |                                             |
+|           |                                            |
 |  +--------v-----------------------------------------+  |
 |  |            Feature Extraction Pipeline           |  |
-|  |                                                   |  |
+|  |                                                  |  |
 |  |  load_assets() -> pickle                         |  |
 |  |  {                                               |  |
 |  |    catalog_embeddings:          (150, 1280)      |  |
@@ -76,14 +76,14 @@ Items enfants           23   (15.3%)
 |  |    catalog_image_paths:         List[str]        |  |
 |  |    catalog_metadata:            List[dict]       |  |
 |  |  }                                               |  |
-|  |                                                   |  |
+|  |                                                  |  |
 |  |  Query Image -> Feature Vector (1280 ou 384)     |  |
 |  |  Cosine Similarity vs Catalogue                  |  |
-|  |  -> Top-K results                               |  |
-|  +---------------------------------------------------+  |
-|                                                         |
+|  |  -> Top-K results                                |  |
+|  +---------------------------------------------------+ |
+|                                                        |
 |  Static: Catalog images sous /staticfiles/images/      |
-|          Servies par WhiteNoise via WSGI                |
+|          Servies par WhiteNoise via WSGI               |
 +--------------------------------------------------------+
                          |
                 Vercel Serverless (Python 3.12)

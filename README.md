@@ -104,7 +104,7 @@ Query Image (uploaded by user)
 |  Cosine Similarity           |
 |                              |
 |        q . c_i               |
-|  s_i = ---------            |
+|  s_i = ---------             |
 |        ||q|| ||c_i||         |
 |                              |
 |  for each catalog vector c_i |
@@ -123,13 +123,13 @@ Input Image
     |
     v
 +--------------------------------------+
-|  Resize to 64 x 64                  |
+|  Resize to 64 x 64                   |
 |  Convert to HSV color space          |
 |                                      |
 |  Hue bins:        8  channels        |
 |  Saturation bins: 4  channels        |
 |  Value bins:      4  channels        |
-|  Joint 3D histogram: 8x4x4 = 128 d  |
+|  Joint 3D histogram: 8x4x4 = 128 d   |
 +--------------------------------------+
     |
     v
@@ -232,5 +232,5 @@ Deployed on **Vercel** via `@vercel/python`. WhiteNoise serves all static and ca
 ## Contact
 
 **Institution:** Ecole Nationale Superieure Polytechnique de Yaounde (ENSPY)  
-**Level:** Master 2 - Intelligence Artificielle  
+**Level:** AIA4 - Intelligence Artificielle  
 **Contact:** npe.techs@gmail.com | +237 650 970 526

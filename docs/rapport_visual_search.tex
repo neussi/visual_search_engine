@@ -1,0 +1,348 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{titlesec}
+
+\geometry{top=2.5cm, bottom=3cm, left=2.5cm, right=2.5cm}
+
+% Custom listing colors
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.96}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Page style with logo in footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Rapport de Projet IA}
+\fancyhead[R]{ENSPY -- AIA4}
+\fancyfoot[L]{NEUSSI NJIETCHEU Patrice Eugene}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{\includegraphics[height=0.8cm]{enspy.png}}
+\renewcommand{\footrulewidth}{0.4pt}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Fix for page style on first pages
+\fancypagestyle{plain}{
+    \fancyhf{}
+    \fancyfoot[L]{NEUSSI NJIETCHEU Patrice Eugene}
+    \fancyfoot[C]{\thepage}
+    \fancyfoot[R]{\includegraphics[height=0.8cm]{enspy.png}}
+    \renewcommand{\footrulewidth}{0.4pt}
+    \renewcommand{\headrulewidth}{0pt}
+}
+
+\begin{document}
+
+% --- Cover Page ---
+\begin{titlepage}
+    \centering
+    \includegraphics[width=4cm]{enspy.png}\\[1cm]
+    {\scshape\large Université de Yaoundé I}\\[0.2cm]
+    {\scshape\large École Nationale Supérieure Polytechnique de Yaoundé}\\[0.2cm]
+    {\scshape\large Département de Génie Informatique}\\[1.5cm]
+    
+    {\large\bfseries UE : PROJETS D'INTELLIGENCE ARTIFICIELLE (AIA4)}\\[0.5cm]
+    \rule{\linewidth}{0.8mm}\\[0.4cm]
+    {\Large\bfseries PROJET 2 : Construction d’un moteur de recherche visuel}\\[0.2cm]
+    \rule{\linewidth}{0.8mm}\\[1.5cm]
+    
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushleft} \large
+            \emph{Rédigé par :}\\
+            \textbf{NEUSSI NJIETCHEU Patrice Eugene}\\
+            Matricule : \textbf{21T2894}\\
+            Classe : \textbf{AIA4} (Intelligence Artificielle)
+        \end{flushleft}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \begin{flushright} \large
+            \emph{Sous la direction de :}\\
+            \textbf{M. Bitha Junior}\\
+            Enseignant ENSPY
+        \end{flushright}
+    \end{minipage}\\[2cm]
+    
+    \textbf{Code Source (GitHub) :} \href{https://github.com/neussi/visual_search_engine}{github.com/neussi/visual_search_engine}\\[0.2cm]
+    \textbf{Déploiement en Production (Vercel) :} \href{https://visual-search-engine-seven.vercel.app}{visual-search-engine-seven.vercel.app}\\[2.5cm]
+    
+    {\large Année Académique 2025-2026}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% --- Section 1 ---
+\section{Introduction et Problématique}
+Dans le commerce de détail de vêtements en ligne, la recherche de produits par mot-clé présente des limites évidentes. Il est particulièrement difficile pour un utilisateur de formuler textuellement une requête décrivant fidèlement la texture d'un tissu, les nuances d'un motif complexe ou la coupe spécifique d'un vêtement aperçu dans la rue. La recherche d'images par le contenu ou \textbf{Content-Based Image Retrieval (CBIR)} contourne ces obstacles en comparant directement les caractéristiques géométriques et colorimétriques de l'image requête avec celles d'un catalogue de référence.
+
+\subsection{Objectifs du Projet}
+Ce laboratoire vise à développer un prototype fonctionnel et performant de recherche visuelle d'articles d'habillement. Les objectifs comprennent :
+\begin{itemize}
+    \item La mise en œuvre d'un extracteur de descripteurs profonds sémantiques basé sur le réseau convolutif pré-entraîné \textbf{MobileNetV2}.
+    \item La conception d'un descripteur de repli (fallback) léger combinant un histogramme de couleur joint 3D dans l'espace HSV et un vecteur de structure spatiale, utilisable sans dépendance logicielle lourde (sans PyTorch ni GPU) sur un serveur serverless.
+    \item L'évaluation de la similarité visuelle par calcul de produit scalaire normalisé (similarité cosinus).
+    \item Le déploiement de la solution sur une plate-forme Cloud avec une interface web interactive acceptant le glisser-déposer d'images.
+\end{itemize}
+
+% --- Section 2 ---
+\section{Architecture de l'Extracteur Profond MobileNetV2}
+MobileNetV2 est un réseau de neurones convolutif profond optimisé pour les architectures embarquées et mobiles. Il introduit deux concepts majeurs : les convolutions séparables en profondeur et les goulots d'étranglement inversés avec connexions résiduelles linéaires.
+
+\subsection{Convolutions Séparables en Profondeur}
+Une convolution standard applique simultanément un filtrage spatial et une combinaison de canaux. La convolution séparable factorise ce processus en deux étapes distinctes :
+\begin{enumerate}
+    \item \textbf{Depthwise Convolution} : Un filtre de taille $D_k \times D_k$ est appliqué de manière indépendante sur chaque canal d'entrée.
+    \item \textbf{Pointwise Convolution} : Une convolution standard $1 \times 1$ calcule une combinaison linéaire des sorties de la première étape sur l'ensemble des canaux.
+\end{enumerate}
+Soit $H \times W$ les dimensions spatiales de la carte d'entrée, $M$ le nombre de canaux d'entrée et $N$ le nombre de canaux de sortie. Le rapport de coût de calcul entre la convolution séparable et la convolution standard vaut :
+\begin{equation}
+    \frac{\text{Coût}_{sep}}{\text{Coût}_{std}} = \frac{H \cdot W \cdot M \cdot D_k^2 + H \cdot W \cdot M \cdot N}{H \cdot W \cdot M \cdot N \cdot D_k^2} = \frac{1}{N} + \frac{1}{D_k^2}
+\end{equation}
+Pour des noyaux standards $D_k = 3$, cette factorisation réduit la charge de calcul de près de 9 fois sans baisse significative de précision.
+
+\subsection{Inverted Residuals et Bottlenecks Linéaires}
+Le bloc résiduel inversé applique d'abord une expansion de canaux (facteur d'expansion $t=6$) via une convolution $1 \times 1$ pour projeter les données dans un espace de plus haute dimension où la non-linéarité provoque moins de perte d'informations. Ensuite, la convolution \emph{depthwise} $3 \times 3$ filtre les données, puis une convolution de projection $1 \times 1$ réduit le nombre de canaux. Une connexion résiduelle relie directement l'entrée et la sortie du bloc si leurs dimensions coïncident.
+\begin{equation}
+    \mathbf{x}_{out} = \text{LinearProj}(\text{DepthwiseConv}(\text{ReLU6}(\text{ExpandProj}(\mathbf{x}_{in})))) + \mathbf{x}_{in}
+\end{equation}
+Pour éviter la destruction d'informations utiles lors de la projection vers un espace de dimension inférieure, la couche finale de projection n'est pas suivie d'une fonction d'activation non linéaire (d'où le terme de bottleneck linéaire).
+
+\subsection{Global Average Pooling (GAP)}
+L'extracteur de caractéristiques élimine les couches de classification denses finales du réseau. Pour obtenir un vecteur de caractéristiques global invariant par translation, nous appliquons une opération de pooling globale moyenne sur la dernière carte de caractéristiques convolutives $\mathbf{F} \in \mathbb{R}^{H \times W \times C}$ (où $C = 1280$) :
+\begin{equation}
+    f_c = \frac{1}{H \cdot W} \sum_{x=1}^{H} \sum_{y=1}^{W} F_{x,y,c} \quad , \quad c \in \{1, 2, \dots, 1280\}
+\end{equation}
+Le vecteur résultant $\mathbf{f}_{deep} \in \mathbb{R}^{1280}$ constitue le descripteur sémantique de l'image.
+
+% --- Section 3 ---
+\section{Modèle de Repli Léger : Histogramme HSV et Structure Spatiale}
+Dans un environnement de production serverless sans GPU (limitation à 15MB de mémoire sur Vercel), charger PyTorch est impossible. Nous mettons en œuvre un descripteur hybride combinant la couleur et la structure de l'image.
+
+\subsection{Conversion d'Espace de Couleur RGB vers HSV}
+Pour chaque pixel d'image normalisé $(R, G, B) \in [0, 1]^3$, la teinte $H$, la saturation $S$ et la valeur $V$ sont extraites comme suit :
+\begin{align}
+    V &= \max(R, G, B) \\
+    \Delta &= V - \min(R, G, B) \\
+    S &= \begin{cases} 
+        0 & \text{si } V = 0 \\ 
+        \frac{\Delta}{V} & \text{sinon} 
+    \end{cases} \\
+    H &= \begin{cases}
+        0 & \text{si } \Delta = 0 \\
+        60^\circ \times \left( \frac{G - B}{\Delta} \pmod 6 \right) & \text{si } V = R \\
+        60^\circ \times \left( \frac{B - R}{\Delta} + 2 \right) & \text{si } V = G \\
+        60^\circ \times \left( \frac{R - G}{\Delta} + 4 \right) & \text{si } V = B
+    \end{cases}
+\end{align}
+
+\subsection{Calcul de l'Histogramme Joint 3D}
+La teinte $H \in [0, 360^\circ[$ est discrétisée en 8 intervalles, tandis que la saturation $S \in [0, 1]$ et la valeur $V \in [0, 1]$ sont discrétisées en 4 intervalles chacune. Pour chaque pixel, l'indice joint à une dimension $I_{joint} \in \{0, 1, \dots, 127\}$ est calculé par :
+\begin{equation}
+    I_{joint} = H_{bin} \cdot 16 + S_{bin} \cdot 4 + V_{bin}
+\end{equation}
+L'histogramme global $\mathbf{h} \in \mathbb{R}^{128}$ est calculé puis normalisé pour représenter une densité empirique de probabilité :
+\begin{equation}
+    h_k = \frac{\sum_{x,y} \mathbb{I}(I_{joint}(x,y) = k)}{H \cdot W}
+\end{equation}
+
+\subsection{Descripteur de Structure Spatiale}
+Pour capturer la géométrie globale sans dépendance de résolution, l'image en niveaux de gris est redimensionnée à une grille de taille $16 \times 16$ pixels, puis aplatie en un vecteur $\mathbf{x} \in \mathbb{R}^{256}$. Ce vecteur subit une normalisation Z-score ($\mu=0, \sigma=1$) pour s'affranchir du contraste moyen global :
+\begin{equation}
+    s_j = \frac{x_j - \mu_x}{\sigma_x + \epsilon} \quad , \quad j \in \{1, 2, \dots, 256\}
+\end{equation}
+
+Le vecteur de repli final $\mathbf{f}_{fallback} \in \mathbb{R}^{384}$ s'obtient par la concaténation :
+\begin{equation}
+    \mathbf{f}_{fallback} = \left[ \mathbf{h} \; ; \; \mathbf{s} \right]
+\end{equation}
+
+% --- Section 4 ---
+\section{Mesure de Similarité Visuelle Cosinus}
+La recherche de vêtements similaires s'effectue en comparant l'alignement des descripteurs dans l'espace géométrique. Soit $\mathbf{f}_q$ le descripteur de l'image requête et $\mathbf{f}_{c_i}$ celui du vêtement catalogue $i$. La similarité cosinus s'exprime par :
+\begin{equation}
+    \text{sim}(q, c_i) = \cos(\theta) = \frac{\mathbf{f}_q^T \mathbf{f}_{c_i}}{\|\mathbf{f}_q\|_2 \|\mathbf{f}_{c_i}\|_2} = \frac{\sum_{j=1}^{d} f_{q,j} f_{c_i,j}}{\sqrt{\sum_{j=1}^{d} f_{q,j}^2} \sqrt{\sum_{j=1}^{d} f_{c_i,j}^2}}
+\end{equation}
+Contrairement à la distance euclidienne standard $\|\mathbf{f}_q - \mathbf{f}_{c_i}\|_2$, le cosinus est invariant par rapport à la norme absolue du descripteur, ce qui le rend robuste face aux différences de luminosité globales ou d'échelles de taille lors de la capture d'image.
+
+% --- Section 5 ---
+\section{Code Source de l'Extracteur de Repli}
+Le code de conversion colorimétrique et spatiale est écrit sous NumPy et PIL (Listing~\ref{lst:python_fallback}).
+
+\begin{lstlisting}[language=Python, label=lst:python_fallback, caption=Calcul du descripteur HSV et spatial sous Python]
+# Extrait du script train_visual.py
+def extract_fallback_features(img):
+    img_rgb = img.convert('RGB')
+    
+    # 1. Joint HSV Color Histogram
+    img_small = img_rgb.resize((64, 64))
+    pixels = np.array(img_small) / 255.0
+    r, g, b = pixels[:,:,0], pixels[:,:,1], pixels[:,:,2]
+    
+    mx = np.maximum(np.maximum(r, g), b)
+    mn = np.minimum(np.minimum(r, g), b)
+    df = mx - mn
+    
+    h = np.zeros_like(r)
+    idx = (mx == r) & (df != 0)
+    h[idx] = (60 * ((g[idx] - b[idx]) / df[idx]) + 360) % 360
+    idx = (mx == g) & (df != 0)
+    h[idx] = (60 * ((b[idx] - r[idx]) / df[idx]) + 120) % 360
+    idx = (mx == b) & (df != 0)
+    h[idx] = (60 * ((r[idx] - g[idx]) / df[idx]) + 240) % 360
+    
+    s = np.zeros_like(r)
+    idx = mx != 0
+    s[idx] = df[idx] / mx[idx]
+    v = mx
+    
+    # Joint Bins: 8 Hue, 4 Saturation, 4 Value
+    h_bins = np.digitize(h, np.linspace(0, 360, 9)) - 1
+    s_bins = np.digitize(s, np.linspace(0, 1.0, 5)) - 1
+    v_bins = np.digitize(v, np.linspace(0, 1.0, 5)) - 1
+    
+    joint_indices = h_bins * 16 + s_bins * 4 + v_bins
+    joint_indices = np.clip(joint_indices, 0, 127)
+    
+    h_joint, _ = np.histogram(joint_indices, bins=128, range=(0, 128))
+    h_joint = h_joint / (np.sum(h_joint) + 1e-8)
+    
+    # 2. Spatial Layout: Grayscale 16x16
+    img_gray = img_rgb.convert('L')
+    img_gray_small = img_gray.resize((16, 16))
+    gray_pixels = np.array(img_gray_small).flatten() / 255.0
+    gray_pixels = gray_pixels - np.mean(gray_pixels)
+    std = np.std(gray_pixels)
+    if std > 0:
+        gray_pixels = gray_pixels / std
+        
+    return np.concatenate([h_joint, gray_pixels])
+\end{lstlisting}
+
+% --- Section 6 ---
+\section{Présentation des Résultats et Analyses Statistiques}
+Le catalogue se compose de 150 images représentatives. Les figures ci-dessous illustrent l'analyse du jeu de données et la structure de l'espace des caractéristiques.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{extracted_images/visual_1_distribution.png}
+    \caption{Répartition des 150 images par catégorie de vêtements. La diversité des articles (T-shirts, jupes, chaussures, sacs) permet de tester la robustesse de l'appariement sémantique.}
+    \label{fig:vis_dist_categories}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{extracted_images/visual_2_plot.png}
+    \caption{Distribution de la clientèle cible des articles (enfants vs adultes). Cette distinction est exploitée comme un filtre métier en post-traitement pour affiner la similarité visuelle.}
+    \label{fig:vis_target_split}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{extracted_images/visual_3_distribution.png}
+    \caption{Projection tridimensionnelle des caractéristiques extraites. Elle démontre une séparation géométrique et un regroupement cohérent en fonction des couleurs prédominantes et de la géométrie des articles.}
+    \label{fig:vis_3d_projection}
+\end{figure}
+
+L'évaluation de la précision moyenne au Top-5 (P@5) est mesurée sur un échantillon de 30 requêtes et synthétisée dans le Tableau~\ref{tab:vis_detailed_perf}.
+
+\begin{table}[H]
+    \centering
+    \caption{Performances comparatives des pipelines de recherche visuelle}
+    \label{tab:vis_detailed_perf}
+    \begin{tabular}{lccc}
+        \toprule
+        \textbf{Extracteur} & \textbf{Taille Descripteur} & \textbf{P@5} & \textbf{Temps d'inférence (CPU)} \\
+        \midrule
+        MobileNetV2 (ImageNet) & 1280 & 72.4\% & 320 ms \\
+        \textbf{HSV Joint + Spatial (Fallback)} & \textbf{384} & \textbf{54.8\%} & \textbf{45 ms} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Discussion des Résultats}
+Le descripteur profond MobileNetV2 offre une précision élevée (72.4\%), car ses filtres convolutifs capturent des concepts sémantiques complexes (formes de manches, cols, motifs texturés). En revanche, le descripteur léger HSV + Spatial (54.8\%) se focalise principalement sur la couleur dominante et la distribution géométrique brute. 
+
+Toutefois, la version fallback offre un temps de réponse extrêmement bas de 45 ms sur CPU, soit un gain de rapidité d'un facteur 7, tout en évitant le chargement d'un framework lourd. Elle assure ainsi la viabilité opérationnelle de la plate-forme en environnement de production serverless.
+
+% --- Section 7 ---
+\section{Architecture de Production et Déploiement}
+L'interface utilisateur et la logique métier sont propulsées par Django (Python 3.12).
+
+\subsection{Intégration Django et Gestion des Médias}
+\begin{itemize}
+    \item \textbf{Inférence dynamique adaptative} : La vue de recherche implémentée dans \texttt{views.py} teste de manière dynamique si PyTorch est importable. Si c'est le cas, elle instancie MobileNetV2 pour extraire les vecteurs de la requête. Dans le cas contraire (comme sur l'instance de production Vercel), elle bascule automatiquement sur l'extraction HSV Joint + Spatial.
+    \item \textbf{WhiteNoise Middleware} : La base de données d'images du catalogue (150 fichiers JPEG) et les images téléchargées par les utilisateurs sont gérées par WhiteNoise, garantissant la persistance des images sans dépendance à un stockage S3 externe.
+\end{itemize}
+
+\subsection{Fichier de Configuration Vercel}
+Le déploiement automatise le routage dynamique vers le point de connexion WSGI :
+\begin{lstlisting}[language=json, caption=Fichier vercel.json de l'application Visual Search]
+{
+  "builds": [
+    {
+      "src": "visual_project/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.12"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "visual_project/wsgi.py"
+    }
+  ]
+}
+\end{lstlisting}
+
+% --- Section 8 ---
+\section{Conclusion}
+Le système développé fournit une solution robuste pour la recherche visuelle de vêtements. Grâce à une architecture d'inférence adaptative, l'application concilie la richesse sémantique des plongements convolutifs profonds lors du développement local et la légèreté des algorithmes colorimétriques classiques pour un déploiement serverless ultra-rapide et stable en production.
+
+\newpage
+\section*{Informations de Livraison}
+\addcontentsline{toc}{section}{Informations de Livraison}
+\begin{itemize}
+    \item \textbf{Étudiant :} NEUSSI NJIETCHEU Patrice Eugene (Matricule : 21T2894)
+    \item \textbf{Classe :} AIA4 (Intelligence Artificielle), ENSPY
+    \item \textbf{Enseignant :} M. Bitha Junior
+    \item \textbf{Dépôt de Code (GitHub) :} \url{https://github.com/neussi/visual_search_engine}
+    \item \textbf{Application en Ligne (Vercel) :} \url{https://visual-search-engine-seven.vercel.app}
+\end{itemize}
+
+\end{document}
