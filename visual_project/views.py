@@ -29,20 +29,47 @@ if HAS_TORCH:
     ])
 
 def extract_fallback_features(img):
+    # PIL Image to RGB
     img_rgb = img.convert('RGB')
+    
+    # 1. Joint HSV Color Histogram
     img_small = img_rgb.resize((64, 64))
-    pixels = np.array(img_small)
+    pixels = np.array(img_small) / 255.0
+    r, g, b = pixels[:,:,0], pixels[:,:,1], pixels[:,:,2]
     
-    r_hist, _ = np.histogram(pixels[:, :, 0], bins=8, range=(0, 256))
-    g_hist, _ = np.histogram(pixels[:, :, 1], bins=8, range=(0, 256))
-    b_hist, _ = np.histogram(pixels[:, :, 2], bins=8, range=(0, 256))
+    mx = np.maximum(np.maximum(r, g), b)
+    mn = np.minimum(np.minimum(r, g), b)
+    df = mx - mn
     
-    r_hist = r_hist / (np.sum(r_hist) + 1e-8)
-    g_hist = g_hist / (np.sum(g_hist) + 1e-8)
-    b_hist = b_hist / (np.sum(b_hist) + 1e-8)
+    # Hue
+    h = np.zeros_like(r)
+    idx = (mx == r) & (df != 0)
+    h[idx] = (60 * ((g[idx] - b[idx]) / df[idx]) + 360) % 360
+    idx = (mx == g) & (df != 0)
+    h[idx] = (60 * ((b[idx] - r[idx]) / df[idx]) + 120) % 360
+    idx = (mx == b) & (df != 0)
+    h[idx] = (60 * ((r[idx] - g[idx]) / df[idx]) + 240) % 360
     
-    color_hist = np.concatenate([r_hist, g_hist, b_hist])
+    # Saturation
+    s = np.zeros_like(r)
+    idx = mx != 0
+    s[idx] = df[idx] / mx[idx]
     
+    # Value
+    v = mx
+    
+    # Joint Bins: 8 Hue, 4 Saturation, 4 Value
+    h_bins = np.digitize(h, np.linspace(0, 360, 9)) - 1
+    s_bins = np.digitize(s, np.linspace(0, 1.0, 5)) - 1
+    v_bins = np.digitize(v, np.linspace(0, 1.0, 5)) - 1
+    
+    joint_indices = h_bins * 16 + s_bins * 4 + v_bins
+    joint_indices = np.clip(joint_indices, 0, 127)
+    
+    h_joint, _ = np.histogram(joint_indices, bins=128, range=(0, 128))
+    h_joint = h_joint / (np.sum(h_joint) + 1e-8)
+    
+    # 2. Spatial Layout: Grayscale 16x16
     img_gray = img_rgb.convert('L')
     img_gray_small = img_gray.resize((16, 16))
     gray_pixels = np.array(img_gray_small).flatten() / 255.0
@@ -51,7 +78,7 @@ def extract_fallback_features(img):
     if std > 0:
         gray_pixels = gray_pixels / std
         
-    return np.concatenate([color_hist, gray_pixels])
+    return np.concatenate([h_joint, gray_pixels])
 
 def load_assets():
     global visual_assets, feature_extractor
@@ -119,15 +146,15 @@ def search(request):
             img_tensor = transform(img_rgb).unsqueeze(0)
             with torch.no_grad():
                 query_vector = feature_extractor(img_tensor).squeeze().numpy()
+            catalog_embeddings = assets['catalog_embeddings']
         else:
             query_vector = extract_fallback_features(query_image)
+            catalog_embeddings = assets.get('catalog_fallback_embeddings', assets['catalog_embeddings'])
             
-        catalog_embeddings = assets['catalog_embeddings']
         catalog_image_paths = assets['catalog_image_paths']
         catalog_metadata = assets['catalog_metadata']
 
-        # If we extract fallback features (280d) but catalog embeddings are PyTorch (1280d),
-        # dynamically extract fallback features for the catalog and cache them in assets.
+        # Fallback if dimensions still mismatch
         if catalog_embeddings.shape[1] != len(query_vector):
             fallback_embeddings = []
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -139,7 +166,7 @@ def search(request):
                 except Exception:
                     fallback_embeddings.append(np.zeros(len(query_vector)))
             catalog_embeddings = np.array(fallback_embeddings)
-            assets['catalog_embeddings'] = catalog_embeddings  # cache it
+            assets['catalog_fallback_embeddings'] = catalog_embeddings  # cache it
             
         # Calculate cosine similarity
         similarities = cosine_similarity(query_vector.reshape(1, -1), catalog_embeddings).flatten()
