@@ -116,7 +116,22 @@ def search(request):
         catalog_embeddings = assets['catalog_embeddings']
         catalog_image_paths = assets['catalog_image_paths']
         catalog_metadata = assets['catalog_metadata']
-        
+
+        # If we extract fallback features (280d) but catalog embeddings are PyTorch (1280d),
+        # dynamically extract fallback features for the catalog and cache them in assets.
+        if catalog_embeddings.shape[1] != len(query_vector):
+            fallback_embeddings = []
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            for path in catalog_image_paths:
+                full_p = os.path.join(base_dir, "dataset", "clothing-dataset", path)
+                try:
+                    with Image.open(full_p) as img:
+                        fallback_embeddings.append(extract_fallback_features(img))
+                except Exception:
+                    fallback_embeddings.append(np.zeros(len(query_vector)))
+            catalog_embeddings = np.array(fallback_embeddings)
+            assets['catalog_embeddings'] = catalog_embeddings  # cache it
+            
         # Calculate cosine similarity
         similarities = cosine_similarity(query_vector.reshape(1, -1), catalog_embeddings).flatten()
         
