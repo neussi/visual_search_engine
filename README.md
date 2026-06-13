@@ -1,10 +1,10 @@
-# 👕 FashionSearch - Moteur de Recherche Visuel de Vêtements
+# FashionSearch - Moteur de Recherche Visuel de Vêtements
 
 **FashionSearch** est un moteur de recherche visuel basé sur le contenu (**CBIR - Content-Based Image Retrieval**) développé avec Django. Il permet de retrouver instantanément des vêtements similaires dans un catalogue en téléchargeant une photo ou en sélectionnant un échantillon. Le système extrait les descripteurs caractéristiques des images et effectue une recherche de plus proches voisins par **similarité cosinus**.
 
 ---
 
-## 🚀 Fonctionnalités Clés
+## Fonctionnalités Clés
 
 1. **Upload Drag-and-Drop** : Zone de glisser-déposer moderne avec prévisualisation immédiate de l'image de requête.
 2. **Recherche Instantanée sur Échantillons** : Galerie de 12 images aléatoires du catalogue permettant de tester les performances du moteur de recherche en un seul clic.
@@ -14,7 +14,7 @@
 
 ---
 
-## 🛠️ Stack Technique
+## Stack Technique
 
 - **Framework Web** : Django 6.0+
 - **Deep Learning (Feature Extraction)** : PyTorch & Torchvision (MobileNetV2)
@@ -24,7 +24,7 @@
 
 ---
 
-## 📦 Installation et Lancement Local
+## Installation et Lancement Local
 
 ### Prerequisites
 - Python 3.10+
@@ -65,7 +65,7 @@ Accédez à l'application sur [http://localhost:8003/](http://localhost:8003/).
 
 ---
 
-## 📂 Structure du Projet
+## Structure du Projet
 
 ```
 ├── visual_project/          # Configuration Django et Vues de recherche vectorielle
