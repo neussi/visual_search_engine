@@ -68,7 +68,7 @@ STATICFILES_DIRS = [
     # Map the clothing dataset images folder so they are collected under /static/images/
     os.path.join(BASE_DIR, 'dataset', 'clothing-dataset'),
 ]
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
